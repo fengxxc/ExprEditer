@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>calcEditer-Demo</title>
+	<script type="text/javascript" src="exprEditer.js"></script>
+</head>
+<body>
+	<div id="calcEditer" style="width: 600px; height: 500px; border: 1px solid black;">
+		<div id="info" style="height: 5%; background-color: #DFD; color: #999"></div>
+		<div id="edit" style="height: 20%; padding: 0 5px;"></div>
+		<div id="tags" style="height: 75%; background-color: rgb(243, 245, 255);"></div>
+	</div>
+	<button id="editEmpty">清空表达式</button>
+	<button id="getExprCode">获取表达式代码</button>
+	<button id="getExprText">获取表达式文本</button>
+	<button id="setTags">设置tag：[
+			{value: 'YJX', text: '药剂学'},
+			{value: 'YSS', text: '隐身术'},
+		]</button><br>
+	<input type="text" id="inp_expr" value="{{YW}}*434+{{SX}}-4/{{YY}}">
+	<button id="setExpr">设置表达式</button>
+	<button id="check">校验</button>
+	<div id="test" style="width: 600px; height: 50px; border: 1px solid black;"></div>
+
+<script type="text/javascript">
+	var options = {
+		editArea: '#edit',
+		tagsArea: '#tags',
+		infoArea: '#info',
+		prefix: '{{',
+		suffix: '}}',
+		tags: [
+			{value: 'YW', text: '语文'},
+			{value: 'SX', text: '数学'},
+			{value: 'YY', text: '英语'},
+			{value: 'JSJ', text: '计算机'},
+		],
+		onIllegalChar: function (editDom, tagsDom, infoDom, exprCode, exprText) {
+			console.log('onIllegalChar');
+
+		},
+		onBadExpr: function (editDom, tagsDom, infoDom, exprCode, exprText) {
+			console.log('onBadExpr');
+			
+		}
+	};
+	var ce = new ExprEditer(options);
+
+	var test = document.getElementById('test');
+	// 点击 清空表达式
+	document.getElementById('editEmpty').onclick = function () {
+		ce.editEmpty();
+	};
+	// 点击 获取表达式代码
+	document.getElementById('getExprCode').onclick = function () {
+		test.innerHTML = ce.getExprCode();
+	};
+	// 点击 获取表达式文本
+	document.getElementById('getExprText').onclick = function () {
+		test.innerHTML = ce.getExprText();
+	};
+	// 点击 设置tag
+	document.getElementById('setTags').onclick = function () {
+		ce.setTags([
+			{value: 'YJX', text: '药剂学'},
+			{value: 'YSS', text: '隐身术'},
+		]);
+	};
+	// 点击 设置表达式
+	document.getElementById('setExpr').onclick = function () {
+		ce.setEditerView(document.getElementById('inp_expr').value);
+	};
+	// 点击 校验
+	document.getElementById('check').onclick = function () {
+		ce._checkExprOnTime();
+	};
+
+	ce.on('expr.illegal_char', function () {
+		console.dir(arguments)
+		console.log('expr.illegal_char');
+	})
+
+</script>
+</body>
+</html>
