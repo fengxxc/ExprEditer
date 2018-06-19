@@ -18,6 +18,7 @@ function ExprEditer (opt) {
 	this.suffix = _opt.suffix || ExprEditerCONT.SUFFIX;
 	this.onIllegalChar = typeof _opt.onIllegalChar == 'function'? _opt.onIllegalChar : null;
 	this.onBadExpr = typeof _opt.onBadExpr == 'function'? _opt.onBadExpr : null;
+	this.onInput = typeof _opt.onInput == 'function'? _opt.onInput : null;
 	// compute property
 	this.exprCode = null;
 	this.exprText = null;
@@ -36,10 +37,10 @@ ExprEditer.prototype.init = function() {
 		// 编辑区html解析成text
 		_t._parseEditerView();
 		// 解析结果渲染在信息区
-		_t._renderInfo();
+		if (_t.onInput)
+			_t.onInput(_t.exprCode, _t.exprText);
 		// 实时校验
 		_t._checkExprOnTime();
-		
 	});
 	// 键盘按键抬起时
 	ExprEditerUtil.bindEvent(_t.editDom, 'keyup', function () {
@@ -121,8 +122,13 @@ ExprEditer.prototype.setEditerView = function(code) {
 		exprHtml = exprHtml.replace(matchCodes[j], matchTextHtmls[j]);
 	_t.editDom.innerHTML = exprHtml;
 	_t._bindEventForAllETag(); // 绑定事件
+	/* 待优化，可改成触发input事件... */
 	_t.exprText = ExprEditerUtil.html2text(exprHtml);
-	_t._renderInfo();
+	// 相当于触发input事件
+	if (_t.onInput)
+		_t.onInput(this.exprCode, this.exprText);
+	// 实时校验
+	_t._checkExprOnTime();
 };
 
 // private:
@@ -182,44 +188,28 @@ ExprEditer.prototype._parseEditerView = function () {
 	this.exprCode = code;
 	this.exprText = this.editDom.innerText.replace(/\s/g, '');
 };
-ExprEditer.prototype._renderInfo = function(info) {
-	var i = info || '';
-	this.infoDom.innerHTML = '<span style="color: #99A;">' + this.exprCode + ' </span> ' + i;
-};
 ExprEditer.prototype._checkExprOnTime = function() {
 	var code = this.exprCode;
 	if (!code) return;
 	// 把标签代码替换成一个数，为啥是2？感觉比较好算吧 |ω•`)
-	code = code.replace(new RegExp(this.prefix+'[a-zA-z0-9]+'+this.suffix, 'g'), '2');
-	if (code.search(/[\u4e00-\u9fa5a-zA-z/~/!/@/#/$/^/&/_/'/"/！/￥/……/（/）/—/“/”/《/》/？]/) != -1) {
-		// this._renderInfo('<span style="color: red;">有非法字符!</span>');
-		// ExprEditerUtil.triggerEvent(this.editDom, ExprEditerCONT.E.ILLEGAL_CHAR);
-		this.onIllegalChar(this.editDom, this.tagsDom, this.infoDom, this.exprCode, this.exprText);
+	// 为啥2用括号括起来？为了当数字紧挨代码的时候让计算机认为它是错的表达式，比如123{{xx}}
+	code = code.replace(new RegExp(this.prefix+'[a-zA-z0-9]+'+this.suffix, 'g'), '(2)');
+	if (code.search(/[\u4e00-\u9fa5a-zA-z\~\!\@\#\$\^\&\_\'\"\！\￥\……\（\）\—\“\”\《\》\？\,]/) != -1) {
+		this.onIllegalChar(this.exprCode, this.exprText);
 		return;
 	}
 
 	var res = null;
 	try {
-		res = eval(code);
+		res = eval(code); // 利用eval校验表达式是否正确，IDE报错请忽略
 		if (!res || typeof res !== 'number') {
-			// this._renderInfo('<span style="color: red;">不是正确的算术表达式!</span>');
-			// ExprEditerUtil.triggerEvent(this.editDom, ExprEditerCONT.E.BAD_EXPR);
-			this.onBadExpr(this.editDom, this.tagsDom, this.infoDom, this.exprCode, this.exprText);
+			this.onBadExpr(this.exprCode, this.exprText);
 		}
 	} catch (e) {
-		// this._renderInfo('<span style="color: red;">error 不是正确的算术表达式!</span>');
-		// ExprEditerUtil.triggerEvent(this.editDom, ExprEditerCONT.E.BAD_EXPR);
-		this.onBadExpr(this.editDom, this.tagsDom, this.infoDom, this.exprCode, this.exprText);
+		this.onBadExpr(this.exprCode, this.exprText);
 	}
 	// TODO
 	// console.log(res);
-};
-ExprEditer.prototype.on = function(type, callback) {
-	// var d = this.exprCode;
-	// callback.arguments[1] = this.exprCode;
-	// Array.prototype.push.call(callback.arguments, this.exprCode);
-	ExprEditerUtil.bindEvent(this.editDom, type, callback, false);
-	return this;
 };
 
 /* static method: */
