@@ -8,9 +8,7 @@
 function ExprEditer (opt) {
 	var _opt = opt;
 	// base property
-	this.el = _opt.el;
 	this.tags = typeof _opt.tags == 'function'? _opt.tags() : _opt.tags;
-	// this.dom = document.querySelector(this.el);
 	this.editDom = document.querySelector(_opt.editArea);
 	this.tagsDom = document.querySelector(_opt.tagsArea);
 	this.infoDom = document.querySelector(_opt.infoArea);
@@ -198,11 +196,10 @@ ExprEditer.prototype._checkExprOnTime = function() {
 		this.onIllegalChar(this.exprCode, this.exprText);
 		return;
 	}
-
 	var res = null;
 	try {
 		res = eval(code); // 利用eval校验表达式是否正确，IDE报错请忽略
-		if (!res || typeof res !== 'number') {
+		if (res == null || typeof res !== 'number') {
 			this.onBadExpr(this.exprCode, this.exprText);
 		}
 	} catch (e) {
